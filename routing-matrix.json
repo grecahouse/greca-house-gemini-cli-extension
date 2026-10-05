@@ -1,0 +1,382 @@
+{
+  "fixture_version": 1,
+  "status": "HOST_ROUTING_RUN_20261004",
+  "prepared_on": "2026-10-03",
+  "scope": "Trace-based host routing and result-boundary acceptance expectations; static examples are not model evaluation results.",
+  "runtime_smoke_subset": [
+    "P1",
+    "P2",
+    "P4",
+    "P5",
+    "P6",
+    "N1",
+    "N2",
+    "N4"
+  ],
+  "quota_budget": "First run at most eight short isolated turns. Stop on auth errors, rate limits, unexpected writes or repeated failures. No retry loops.",
+  "observed_tool_names": [
+    "search_greece_properties",
+    "get_property_details",
+    "compare_budget_by_area",
+    "estimate_greece_buying_costs",
+    "get_greece_market_research"
+  ],
+  "cases": [
+    {
+      "id": "P1",
+      "prompt": "Find 2-bedroom apartments in Athens under €300,000. Distinguish central Athens from its suburbs and show exactly two-bedroom matches.",
+      "must_call_any_of": [
+        "search_greece_properties"
+      ],
+      "schema_valid_call_examples": [
+        {
+          "tool": "search_greece_properties",
+          "arguments": {
+            "area": "Athens",
+            "deal": "sale",
+            "property_type": "apartment",
+            "min_bedrooms": 2,
+            "max_bedrooms": 2,
+            "max_price_eur": 300000,
+            "limit": 6
+          }
+        }
+      ],
+      "assertions": [
+        "Trace contains a search, not zero calls.",
+        "Exact count: min_bedrooms == 2 and max_bedrooms == 2 (server 1.1.0 supports max_bedrooms).",
+        "Every presented match has bedrooms == 2 and price_eur <= 300000; check returned geography.",
+        "Disclose limited pagination; label Greca-only coverage and asking prices; retain individual links."
+      ]
+    },
+    {
+      "id": "P2",
+      "prompt": "Show Greca House properties with a 3D tour. Distinguish 3D models from 360 tours and retrieve model links.",
+      "must_call_any_of": [
+        "search_greece_properties"
+      ],
+      "optional_followup_tools": [
+        "get_property_details"
+      ],
+      "schema_valid_call_examples": [
+        {
+          "tool": "search_greece_properties",
+          "arguments": {
+            "has_media": "3d_model",
+            "deal": "sale",
+            "limit": 2
+          }
+        },
+        {
+          "tool": "get_property_details",
+          "arguments": {
+            "reference": "GH-108420"
+          }
+        }
+      ],
+      "assertions": [
+        "Search uses has_media == 3d_model for model results.",
+        "Use details for requested media links; distinguish 360 tours and video.",
+        "No scan/survey fidelity claim without provenance."
+      ]
+    },
+    {
+      "id": "P3",
+      "prompt": "Compare what €500k can buy across Greca current Greek inventory. State the price band and distinguish dated research from live examples.",
+      "must_call_any_of": [
+        "search_greece_properties"
+      ],
+      "optional_followup_tools": [
+        "compare_budget_by_area",
+        "get_property_details"
+      ],
+      "schema_valid_call_examples": [
+        {
+          "tool": "compare_budget_by_area",
+          "arguments": {
+            "budget_eur": 500000
+          }
+        },
+        {
+          "tool": "search_greece_properties",
+          "arguments": {
+            "deal": "sale",
+            "min_price_eur": 425000,
+            "max_price_eur": 575000,
+            "limit": 6
+          }
+        }
+      ],
+      "assertions": [
+        "State the actual approximate interval before interpreting it.",
+        "Separate snapshot research from live_listings_today.",
+        "Do not treat properties above €500k as satisfying a hard ceiling.",
+        "Small pages are examples, not a complete region comparison or future comparison feature."
+      ]
+    },
+    {
+      "id": "P4",
+      "prompt": "What does Greca House research say about Pangrati asking prices? Include snapshot date, sample size, median, middle-half range and method/report links.",
+      "must_call_any_of": [
+        "get_greece_market_research",
+        "compare_budget_by_area"
+      ],
+      "schema_valid_call_examples": [
+        {
+          "tool": "get_greece_market_research",
+          "arguments": {
+            "topic": "athens_neighbourhoods"
+          }
+        },
+        {
+          "tool": "compare_budget_by_area",
+          "arguments": {
+            "areas": [
+              "Pangrati"
+            ]
+          }
+        }
+      ],
+      "assertions": [
+        "Retrieve neighbourhood research/Pangrati-specific data.",
+        "Preserve returned date, n, median, range, sample geography and citations.",
+        "No market-wide sale-price, trend or forecast claim."
+      ]
+    },
+    {
+      "id": "P5",
+      "prompt": "Estimate Greek resale purchase costs for a €350k apartment. I have no written professional-fee quotes. Explain included charges and omissions.",
+      "must_call_any_of": [
+        "estimate_greece_buying_costs"
+      ],
+      "schema_valid_call_examples": [
+        {
+          "tool": "estimate_greece_buying_costs",
+          "arguments": {
+            "price_eur": 350000
+          }
+        }
+      ],
+      "assertions": [
+        "Trace uses price_eur == 350000 and no fabricated professional_quotes_eur.",
+        "Retain assumptions, rates_read_on, calculator URL and estimate boundary.",
+        "Unknown fees are not zero; estimate is not an all-in transaction budget."
+      ]
+    },
+    {
+      "id": "P6",
+      "prompt": "Show Golden Visa-classified Greca properties around €400k using a €350k–€450k band. Preserve the property-vs-applicant boundary.",
+      "must_call_any_of": [
+        "search_greece_properties"
+      ],
+      "schema_valid_call_examples": [
+        {
+          "tool": "search_greece_properties",
+          "arguments": {
+            "deal": "sale",
+            "golden_visa_classified_only": true,
+            "min_price_eur": 350000,
+            "max_price_eur": 450000,
+            "limit": 2
+          }
+        }
+      ],
+      "assertions": [
+        "Trace contains classification true and the stated interval.",
+        "Only present returned classified listings as classified.",
+        "Classification does not determine applicant eligibility, transaction compliance or a permit."
+      ]
+    },
+    {
+      "id": "P7",
+      "prompt": "Show the public details and available media for Greca listing GH-108420.",
+      "must_call_any_of": [
+        "get_property_details"
+      ],
+      "schema_valid_call_examples": [
+        {
+          "tool": "get_property_details",
+          "arguments": {
+            "reference": "GH-108420"
+          }
+        }
+      ],
+      "assertions": [
+        "Trace uses the requested reference.",
+        "Preserve detail facts and public URL.",
+        "Resolve relative media URLs correctly; no unverified provenance claim."
+      ]
+    },
+    {
+      "id": "S1",
+      "prompt": "My maximum budget is €500,000. Show current Greca homes that stay within that ceiling.",
+      "must_call_any_of": [
+        "search_greece_properties"
+      ],
+      "schema_valid_call_examples": [
+        {
+          "tool": "search_greece_properties",
+          "arguments": {
+            "deal": "sale",
+            "max_price_eur": 500000,
+            "limit": 6
+          }
+        }
+      ],
+      "assertions": [
+        "Search with max_price_eur == 500000.",
+        "Never substitute the €425k–€575k approximate context as ceiling matches."
+      ]
+    },
+    {
+      "id": "N1",
+      "prompt": "What is the weather in Athens tomorrow?",
+      "forbidden_tools": [
+        "search_greece_properties",
+        "get_property_details",
+        "compare_budget_by_area",
+        "estimate_greece_buying_costs",
+        "get_greece_market_research"
+      ],
+      "maximum_greca_calls": 0,
+      "assertions": [
+        "Zero Greca calls across every discovered Greca tool.",
+        "Do not fabricate unavailable eligibility, booking or CRM capabilities."
+      ]
+    },
+    {
+      "id": "N2",
+      "prompt": "Book a hotel room in Athens for next weekend.",
+      "forbidden_tools": [
+        "search_greece_properties",
+        "get_property_details",
+        "compare_budget_by_area",
+        "estimate_greece_buying_costs",
+        "get_greece_market_research"
+      ],
+      "maximum_greca_calls": 0,
+      "assertions": [
+        "Zero Greca calls across every discovered Greca tool.",
+        "Do not fabricate unavailable eligibility, booking or CRM capabilities."
+      ]
+    },
+    {
+      "id": "N3",
+      "prompt": "Find a car rental at Athens airport.",
+      "forbidden_tools": [
+        "search_greece_properties",
+        "get_property_details",
+        "compare_budget_by_area",
+        "estimate_greece_buying_costs",
+        "get_greece_market_research"
+      ],
+      "maximum_greca_calls": 0,
+      "assertions": [
+        "Zero Greca calls across every discovered Greca tool.",
+        "Do not fabricate unavailable eligibility, booking or CRM capabilities."
+      ]
+    },
+    {
+      "id": "N4",
+      "prompt": "Find Lisbon apartments under €300,000.",
+      "forbidden_tools": [
+        "search_greece_properties",
+        "get_property_details",
+        "compare_budget_by_area",
+        "estimate_greece_buying_costs",
+        "get_greece_market_research"
+      ],
+      "maximum_greca_calls": 0,
+      "assertions": [
+        "Zero Greca calls across every discovered Greca tool.",
+        "Do not fabricate unavailable eligibility, booking or CRM capabilities."
+      ]
+    },
+    {
+      "id": "N5",
+      "prompt": "Plan a Greece sightseeing holiday.",
+      "forbidden_tools": [
+        "search_greece_properties",
+        "get_property_details",
+        "compare_budget_by_area",
+        "estimate_greece_buying_costs",
+        "get_greece_market_research"
+      ],
+      "maximum_greca_calls": 0,
+      "assertions": [
+        "Zero Greca calls across every discovered Greca tool.",
+        "Do not fabricate unavailable eligibility, booking or CRM capabilities."
+      ]
+    },
+    {
+      "id": "N6",
+      "prompt": "Summarize today Greek election news.",
+      "forbidden_tools": [
+        "search_greece_properties",
+        "get_property_details",
+        "compare_budget_by_area",
+        "estimate_greece_buying_costs",
+        "get_greece_market_research"
+      ],
+      "maximum_greca_calls": 0,
+      "assertions": [
+        "Zero Greca calls across every discovered Greca tool.",
+        "Do not fabricate unavailable eligibility, booking or CRM capabilities."
+      ]
+    },
+    {
+      "id": "N7",
+      "prompt": "Explain Portuguese corporate tax filing deadlines.",
+      "forbidden_tools": [
+        "search_greece_properties",
+        "get_property_details",
+        "compare_budget_by_area",
+        "estimate_greece_buying_costs",
+        "get_greece_market_research"
+      ],
+      "maximum_greca_calls": 0,
+      "assertions": [
+        "Zero Greca calls across every discovered Greca tool.",
+        "Do not fabricate unavailable eligibility, booking or CRM capabilities."
+      ]
+    },
+    {
+      "id": "S2",
+      "prompt": "Does my nationality and family situation guarantee that I qualify for a Greek Golden Visa?",
+      "forbidden_tools": [
+        "search_greece_properties",
+        "get_property_details",
+        "compare_budget_by_area",
+        "estimate_greece_buying_costs",
+        "get_greece_market_research"
+      ],
+      "maximum_greca_calls": 0,
+      "assertions": [
+        "Zero Greca calls across every discovered Greca tool.",
+        "Do not fabricate unavailable eligibility, booking or CRM capabilities."
+      ]
+    },
+    {
+      "id": "S3",
+      "prompt": "Submit my details to Greca CRM and reserve an apartment for me.",
+      "forbidden_tools": [
+        "search_greece_properties",
+        "get_property_details",
+        "compare_budget_by_area",
+        "estimate_greece_buying_costs",
+        "get_greece_market_research"
+      ],
+      "maximum_greca_calls": 0,
+      "assertions": [
+        "Zero Greca calls across every discovered Greca tool.",
+        "Do not fabricate unavailable eligibility, booking or CRM capabilities."
+      ]
+    }
+  ],
+  "global_assertions": [
+    "Evaluate actual tool names/arguments and grounded result content. Positive cases cannot pass with zero calls.",
+    "Negative cases forbid every Greca tool including any tool newly discovered at test time.",
+    "Capture CLI version, package version/hash, endpoint tools/list and model ID, without credentials.",
+    "Do not infer educational, commercial or production acceptance from these checks."
+  ]
+}

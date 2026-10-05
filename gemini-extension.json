@@ -1,0 +1,12 @@
+{
+  "name": "greca-house",
+  "version": "1.1.0",
+  "description": "Greca House public Greek property listings, listing details, dated asking-price research, budget context and Greek resale buying-cost estimates.",
+  "mcpServers": {
+    "greca_house": {
+      "httpUrl": "https://grecahouse.com/mcp",
+      "timeout": 30000
+    }
+  },
+  "contextFileName": "GEMINI.md"
+}
